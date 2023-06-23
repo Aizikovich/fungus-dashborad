@@ -1,0 +1,144 @@
+/* styles.css */
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /*text-align: center; !* Center align the charts container *!*/
+}
+
+.charts-container {
+    display: -webkit-flex;
+    /*grid-template-columns: repeat(2, 1fr);*/
+    grid-gap: 20px;
+    margin-bottom: 40px;
+}
+
+.chart-column {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    height: 100%;
+    width: 100%;
+}
+
+.attribute-dropdown {
+    margin-bottom: 20px;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.slider-label {
+    margin-right: 10px;
+}
+
+.slider {
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.slider .rc-slider-rail {
+    background-color: #E5DADA; /* Set the rail color */
+    height: 10px; /* Set the rail height */
+
+}
+
+.slider .rc-slider-track {
+    background-color: #007bff; /* Set the track color */
+    height: 10px; /* Set the track height */
+    padding: 5px;
+}
+
+.slider .rc-slider-handle {
+    background-color: #E59500; /* Set the handle color */
+    border: 6px solid #ffffff; /* Set the handle border color */
+    width: 20px; /* Set the handle width */
+    height: 20px; /* Set the handle height */
+    margin-top: -6px; /* Adjust the handle position */
+}
+
+.slider .rc-slider-handle:hover {
+    background-color: #0069d9; /* Set the handle color on hover */
+    border-color: #0062cc; /* Set the handle border color on hover */
+}
+
+
+.slider .rc-slider-mark-text {
+    color: #E5DADA; /* Set the mark text color */
+    font-family: "Arial Black", sans-serif; /* Set the mark text font */
+    font-size: 9px; /* Set the mark text font size */
+}
+
+.dashboard-title {
+    font-family: "Arial Black", sans-serif;
+    font-size: 48px;
+    text-align: center;
+    align-items: center;
+    alignment: center;
+    /*margin-top: 20vh;*/
+    margin-bottom: 10vh;
+    width: 100%;
+}
+
+.dashboard-subtitle {
+    font-family: "Arial Black", sans-serif;
+    font-size: 24px;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 20px;
+    width: 100%;
+
+}
+
+.configuration-box {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 200px;
+    padding: 15px;
+    background-color: #840032;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.configuration-box h2 {
+    font-family: "Arial Black", sans-serif;
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #E5DADA;
+}
+
+.configuration-box .slider-container {
+    margin-bottom: 10px;
+}
+
+.configuration-box .slider-label {
+    margin-right: 10px;
+    color: #E5DADA;
+    font-family: "Arial Black", sans-serif;
+    font-size: 14px;
+
+}
+
+.configuration-box .slider {
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.configuration-box .button-container {
+    text-align: right;
+    margin-top: 20px;
+
+}
+.configuration-box .button-container .btn-text{
+    color: #E5DADA;
+    font-family: "Arial Black", sans-serif;
+    font-size: 14px;
+    margin-right: 10px;
+   }
+
