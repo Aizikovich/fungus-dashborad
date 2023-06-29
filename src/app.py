@@ -659,7 +659,7 @@ def main():
             make_static(f'http://127.0.0.1:{port}/')
             return 'Saved'
 
-    app.run_server(debug=False, port=port)
+    app.run_server()
 
 
 if __name__ == '__main__':
