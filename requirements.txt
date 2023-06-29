@@ -4,3 +4,6 @@ requests==2.27.1
 scipy==1.10.1
 gunicorn
 dash-tools
+
+plotly~=5.15.0
+dash~=2.7.0

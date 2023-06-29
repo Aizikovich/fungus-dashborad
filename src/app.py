@@ -13,6 +13,9 @@ import plotly.express as px
 import requests
 from dash import html, dcc, Input, Output
 
+app = dash.Dash(__name__, external_stylesheets=['assets/styles.css'])
+server = app.server
+
 color_blind_list = [
     '#7f7f7f',  # Gray
     '#bcbd22',  # Olive
@@ -345,8 +348,7 @@ def theil_u(x, y):
 def main():
     port = 9050
 
-    app = dash.Dash(__name__, external_stylesheets=['assets/styles.css'])
-    server = app.server
+
     df = pd.read_csv("../data/mushrooms.csv")
     df = df.drop(['veil-type'], axis=1)
 
