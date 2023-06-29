@@ -1,6 +1,5 @@
 numpy==1.23.4
 pandas==1.5.1
-plotly==5.9.0
 requests==2.27.1
 scipy==1.10.1
 gunicorn
