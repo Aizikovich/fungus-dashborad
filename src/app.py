@@ -345,9 +345,7 @@ def theil_u(x, y):
         return (s_x - s_xy) / s_x
 
 
-
 port = 9050
-
 
 df = pd.read_csv("../data/mushrooms.csv")
 df = df.drop(['veil-type'], axis=1)
@@ -357,8 +355,6 @@ attributes = df.columns.tolist()  # Get the list of attribute options from the D
 fig = update_pie_chart(df, 'habitat')  # Initialize the pie chart with a default attribute and mode
 
 fig1 = update_bar_plot(df, 'ring-number', 0)
-
-
 
 # Map the attribute values to their corresponding labels
 df_combinations = df.copy()
@@ -420,7 +416,9 @@ def create_heatmap(color_blind):
     )
     return theilu_fig
 
+
 theilu_fig = create_heatmap(0)
+
 
 # Create the sunburst chart
 def create_sunburst(color_blind):
@@ -440,10 +438,11 @@ def create_sunburst(color_blind):
     fi.update_layout(margin=dict(t=0, l=0, r=0, b=0))
     return fi
 
+
 fig3 = create_sunburst(color_blind=False)
 
-def create_big_heatmap(color_blind):
 
+def create_big_heatmap(color_blind):
     # Calculate the chi-square test p-values for variable association
     def cramers_v(confusion_matrix):
         chi2 = ss.chi2_contingency(confusion_matrix)[0]
@@ -469,13 +468,14 @@ def create_big_heatmap(color_blind):
     else:
         scale = 'Viridis'
     c_fig = px.imshow(corr_matrix.astype(float),
-                         x=corr_matrix.columns,
-                         y=corr_matrix.index,
-                         color_continuous_scale=scale,
-                         title="Cramér's V Statistic Heatmap",
-                         height=600,
-                         width=600)
+                      x=corr_matrix.columns,
+                      y=corr_matrix.index,
+                      color_continuous_scale=scale,
+                      title="Cramér's V Statistic Heatmap",
+                      height=600,
+                      width=600)
     return c_fig
+
 
 corr_fig = create_big_heatmap(color_blind=0)
 encoded_image = base64.b64encode(open("img.png", 'rb').read())
@@ -546,7 +546,8 @@ app.layout = html.Div(
                 # add title
                 html.H3("Mushroom Edibility and Poisonous by most common physical attributes",
                         style={'font-family': "Arial Black"}),
-                html.H4("Class By Odor (Ring 0), Spore-print-color (Ring 1) & Gill-color (Ring 2)", style={'font-family': "Arial Black"}),
+                html.H4("Class By Odor (Ring 0), Spore-print-color (Ring 1) & Gill-color (Ring 2)",
+                        style={'font-family': "Arial Black"}),
                 html.Div(className="circle", children=[
                     dcc.Graph(
                         id='circle-plot',
@@ -590,6 +591,7 @@ app.layout = html.Div(
     ],
 )
 
+
 @app.callback(
     [Output('bar-plot', 'figure'),
      Output('survivors-gender-pie', 'figure'),
@@ -602,7 +604,6 @@ app.layout = html.Div(
      Input('attribute-dropdown', 'value')]
 )
 def update_graphs(mode_value, theme_value, attribute_value):
-
     pie = update_pie_chart(df, attribute_value)
     bar = update_bar_plot(df, attribute_value, 0)
     sun = create_sunburst(0)
@@ -646,6 +647,7 @@ def update_graphs(mode_value, theme_value, attribute_value):
 
         return bar, pie, small_corr, sun, big_corr, {'backgroundColor': '#002642', 'color': '#E5DADA'}
 
+
 @app.callback(
     Output('saved', 'children'),
     Input('save', 'n_clicks')
@@ -658,6 +660,5 @@ def save_result(n_clicks):
         return 'Saved'
 
 
-
 if __name__ == '__main__':
-    app.run_server()
+    app.run_server(debug=True)
