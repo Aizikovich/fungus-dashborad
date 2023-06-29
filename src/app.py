@@ -345,323 +345,319 @@ def theil_u(x, y):
         return (s_x - s_xy) / s_x
 
 
-def main():
-    port = 9050
+
+port = 9050
 
 
-    df = pd.read_csv("../data/mushrooms.csv")
-    df = df.drop(['veil-type'], axis=1)
+df = pd.read_csv("../data/mushrooms.csv")
+df = df.drop(['veil-type'], axis=1)
 
-    attributes = df.columns.tolist()  # Get the list of attribute options from the DataFrame columns
+attributes = df.columns.tolist()  # Get the list of attribute options from the DataFrame columns
 
-    fig = update_pie_chart(df, 'habitat')  # Initialize the pie chart with a default attribute and mode
+fig = update_pie_chart(df, 'habitat')  # Initialize the pie chart with a default attribute and mode
 
-    fig1 = update_bar_plot(df, 'ring-number', 0)
+fig1 = update_bar_plot(df, 'ring-number', 0)
 
 
 
-    # Map the attribute values to their corresponding labels
-    df_combinations = df.copy()
-    df_combinations["class"] = df_combinations["class"].map(attribute_mapping["class"])
-    df_combinations["bruises"] = df_combinations["bruises"].map(attribute_mapping["bruises"])
-    df_combinations["population"] = df_combinations["population"].map(attribute_mapping["population"])
-    df_combinations["habitat"] = df_combinations["habitat"].map(attribute_mapping["habitat"])
-    df_combinations["odor"] = df_combinations["odor"].map(attribute_mapping["odor"])
-    df_combinations["spore-print-color"] = df_combinations["spore-print-color"].map(
-        attribute_mapping["spore-print-color"])
-    df_combinations["gill-color"] = df_combinations["gill-color"].map(attribute_mapping["gill-color"])
-    df_combinations["stalk-shape"] = df_combinations["stalk-shape"].map(attribute_mapping["stalk-shape"])
-    df_combinations["gill-size"] = df_combinations["gill-size"].map(attribute_mapping["gill-size"])
-    df_combinations["ring-number"] = df_combinations["ring-number"].map(attribute_mapping["ring-number"])
+# Map the attribute values to their corresponding labels
+df_combinations = df.copy()
+df_combinations["class"] = df_combinations["class"].map(attribute_mapping["class"])
+df_combinations["bruises"] = df_combinations["bruises"].map(attribute_mapping["bruises"])
+df_combinations["population"] = df_combinations["population"].map(attribute_mapping["population"])
+df_combinations["habitat"] = df_combinations["habitat"].map(attribute_mapping["habitat"])
+df_combinations["odor"] = df_combinations["odor"].map(attribute_mapping["odor"])
+df_combinations["spore-print-color"] = df_combinations["spore-print-color"].map(
+    attribute_mapping["spore-print-color"])
+df_combinations["gill-color"] = df_combinations["gill-color"].map(attribute_mapping["gill-color"])
+df_combinations["stalk-shape"] = df_combinations["stalk-shape"].map(attribute_mapping["stalk-shape"])
+df_combinations["gill-size"] = df_combinations["gill-size"].map(attribute_mapping["gill-size"])
+df_combinations["ring-number"] = df_combinations["ring-number"].map(attribute_mapping["ring-number"])
 
-    # filter records that odor label is appears less than 50 times
-    df_odor = df_combinations.groupby('odor').filter(lambda x: len(x) > 300)
-    df_spore_color = df_odor.groupby(['odor', 'spore-print-color']).filter(lambda x: len(x) > 300)
-    df_gill_color = df_spore_color.groupby(['odor', 'spore-print-color', 'gill-color']).filter(lambda x: len(x) > 300)
+# filter records that odor label is appears less than 50 times
+df_odor = df_combinations.groupby('odor').filter(lambda x: len(x) > 300)
+df_spore_color = df_odor.groupby(['odor', 'spore-print-color']).filter(lambda x: len(x) > 300)
+df_gill_color = df_spore_color.groupby(['odor', 'spore-print-color', 'gill-color']).filter(lambda x: len(x) > 300)
 
-    # df_spore_color = df_spore_color.groupby('gill-color').filter(lambda x: len(x) > 300)
 
-    def create_heatmap(color_blind):
-        # Calculate Theil's U for each column
-        theilu = pd.DataFrame(index=['class'], columns=df.columns)
-        for column in df.columns:
-            u = theil_u(df['class'].tolist(), df[column].tolist())
-            theilu.loc[:, column] = u
+def create_heatmap(color_blind):
+    # Calculate Theil's U for each column
+    theilu = pd.DataFrame(index=['class'], columns=df.columns)
+    for column in df.columns:
+        u = theil_u(df['class'].tolist(), df[column].tolist())
+        theilu.loc[:, column] = u
 
-        # Remove columns with values less than 0.4 and higher than 0.1
-        theilu = theilu.loc[:, (theilu.min() >= 0.3)]
+    # Remove columns with values less than 0.4 and higher than 0.1
+    theilu = theilu.loc[:, (theilu.min() >= 0.3)]
 
-        # Remove the 'class' attribute
-        if 'class' in theilu.columns:
-            theilu = theilu.drop('class', axis=1)
+    # Remove the 'class' attribute
+    if 'class' in theilu.columns:
+        theilu = theilu.drop('class', axis=1)
 
-        # Sort values from high to low
-        theilu = theilu.sort_values(by='class', axis=1, ascending=False)
+    # Sort values from high to low
+    theilu = theilu.sort_values(by='class', axis=1, ascending=False)
 
-        if color_blind == 1:
-            colorscale = 'Cividis'
-        else:
-            colorscale = 'Viridis'
-        theilu_fig = go.Figure(
-            data=[
-                go.Heatmap(
-                    z=theilu.values,
-                    x=theilu.columns,
-                    y=theilu.index,
-                    colorscale=colorscale,
-                    colorbar=dict(title="Theil's U"),
-                )
-            ],
-            layout=go.Layout(
-                title="Theil's U Heatmap",
-                xaxis=dict(title="Features"),
-                yaxis=dict(title="Class"),
-                height=500,
-            ),
-        )
-        return theilu_fig
-
-    theilu_fig = create_heatmap(0)
-
-    # Create the sunburst chart
-    def create_sunburst(color_blind):
-        if color_blind:
-            color_discrete_map = {'edible': '#1f77b4', 'poisonous': '#ff7f0e'}
-        else:
-            color_discrete_map = {'edible': 'seagreen', 'poisonous': 'red'}
-
-        fi = px.sunburst(
-            df_gill_color,
-            path=["odor", "spore-print-color", "gill-color", "class"],
-            color="class",
-            color_discrete_map=color_discrete_map,
-            height=800,
-        )
-        fi.update_traces(textinfo='label+percent entry')
-        fi.update_layout(margin=dict(t=0, l=0, r=0, b=0))
-        return fi
-
-    fig3 = create_sunburst(color_blind=False)
-
-    def create_big_heatmap(color_blind):
-
-        # Calculate the chi-square test p-values for variable association
-        def cramers_v(confusion_matrix):
-            chi2 = ss.chi2_contingency(confusion_matrix)[0]
-            n = confusion_matrix.sum().sum()
-            phi2 = chi2 / n
-            r, k = confusion_matrix.shape
-            phi2corr = max(0, phi2 - ((k - 1) * (r - 1)) / (n - 1))
-            rcorr = r - ((r - 1) ** 2) / (n - 1)
-            kcorr = k - ((k - 1) ** 2) / (n - 1)
-            return np.sqrt(phi2corr / min((kcorr - 1), (rcorr - 1)))
-
-        corr_matrix = pd.DataFrame(index=df.columns, columns=df.columns)
-        for col1 in df.columns:
-            for col2 in df.columns:
-                confusion_matrix = pd.crosstab(df[col1], df[col2])
-                corr_matrix.loc[col1, col2] = cramers_v(confusion_matrix)
-
-        # Set diagonal elements to 1
-        np.fill_diagonal(corr_matrix.values, 1)
-        # Plot the heatmap
-        if color_blind:
-            scale = 'Cividis'
-        else:
-            scale = 'Viridis'
-        c_fig = px.imshow(corr_matrix.astype(float),
-                             x=corr_matrix.columns,
-                             y=corr_matrix.index,
-                             color_continuous_scale=scale,
-                             title="Cramér's V Statistic Heatmap",
-                             height=600,
-                             width=600)
-        return c_fig
-
-    corr_fig = create_big_heatmap(color_blind=0)
-    encoded_image = base64.b64encode(open("img.png", 'rb').read())
-
-    app.layout = html.Div(
-        id="app-container",
-        className="container",
-        style={'backgroundColor': '#ffffff'},  # Set initial background color
-        children=[
-
-            html.Div(className="six columns", children=[
-                html.Img(src='data:image/png;base64,{}'.format(encoded_image.decode()), className="logo"),
-
-                html.H1("Mushroom Dashboard", className="dashboard-title"),
-                html.H2("Eran Aizikovich 316531201, Yuval Segal 313354763",
-                        className="dashboard-subtitle"),
-
-            ]),
-
-            html.Div(className="charts-container", children=[
-                html.Div(className="row", children=[
-                    html.Div(className="chart-column", children=[
-                        html.Div(className="corr_heatmap", children=[
-                            dcc.Graph(
-                                id='theil-u-heatmap',
-                                figure=theilu_fig,
-                            ),
-                        ]),
-                    ]),
-                    html.Div(className="chart-column", children=[
-                        html.Div(className="corr_heatmap", children=[
-                            dcc.Graph(
-                                id='corr_heatmap',
-                                figure=corr_fig,
-                            ),
-                        ], style={'margin': 'auto'}),
-                    ]),
-                ]),
-
-                html.Div(className="row", children=[
-
-                    html.Div(className="chart-column", children=[
-                        dcc.Graph(id="bar-plot", figure=fig1)
-                    ]),
-                    html.Div(className="chart-column", children=[
-                        html.Div(className="pie-chat", children=[
-                            dcc.Graph(id="survivors-gender-pie", figure=fig)
-
-                        ]),
-                    ]),
-                ]),
-                html.Div(className="row2", children=[
-                    html.Div(className="attribute-dropdown", children=[
-                        html.Label("Select Attribute for Charts above", style={'font-family': "Arial Black"}),
-                        dcc.Dropdown(
-                            id='attribute-dropdown',
-                            options=[{'label': attr, 'value': attr} for attr in attributes[1:]],
-                            value=attributes[1],
-                            multi=False,
-                            optionHeight=40,  # Set the height of each option
-                            style={'height': 'auto', 'width': '100%', 'font-family': "Arial Black",
-                                   'color': '#840032'},
-                        ),
-                    ])
-                ]),
-
-                html.Div(className="row3", children=[
-                    # add title
-                    html.H3("Mushroom Edibility and Poisonous by most common physical attributes",
-                            style={'font-family': "Arial Black"}),
-                    html.H4("Class By Odor (Ring 0), Spore-print-color (Ring 1) & Gill-color (Ring 2)", style={'font-family': "Arial Black"}),
-                    html.Div(className="circle", children=[
-                        dcc.Graph(
-                            id='circle-plot',
-                            figure=fig3,
-                        ),
-                    ]),
-                ]),
-
-            ]),
-            html.Div(className="row", children=[
-                html.Div(className="twelve columns", children=[
-                    html.Div(className="configuration-box", children=[
-                        html.H2("Configuration Box"),
-                        html.Div(id="slider-container", className="slider-container", children=[
-                            dcc.Slider(
-                                id='mode-slider',
-                                min=0,
-                                max=1,
-                                step=1,
-                                marks={0: 'Regular', 1: 'Color-Blind'},
-                                value=0,
-                                className="slider",
-                            ),
-                            dcc.Slider(
-                                id='theme-slider',
-                                min=0,
-                                max=1,
-                                step=1,
-                                marks={0: 'Light', 1: 'Dark'},
-                                value=0,
-                                className="slider"
-                            ),
-                        ]),
-                        html.Div(className="button-container", children=[
-                            html.Button('Save Static', id='save', n_clicks=0, className="btn btn-primary"),
-                            html.Span('', id='saved', className="btn-text")
-                        ]),
-                    ]),
-                ]),
-            ]),
+    if color_blind == 1:
+        colorscale = 'Cividis'
+    else:
+        colorscale = 'Viridis'
+    theilu_fig = go.Figure(
+        data=[
+            go.Heatmap(
+                z=theilu.values,
+                x=theilu.columns,
+                y=theilu.index,
+                colorscale=colorscale,
+                colorbar=dict(title="Theil's U"),
+            )
         ],
+        layout=go.Layout(
+            title="Theil's U Heatmap",
+            xaxis=dict(title="Features"),
+            yaxis=dict(title="Class"),
+            height=500,
+        ),
     )
+    return theilu_fig
 
-    @app.callback(
-        [Output('bar-plot', 'figure'),
-         Output('survivors-gender-pie', 'figure'),
-         Output('theil-u-heatmap', 'figure'),
-         Output('circle-plot', 'figure'),
-         Output('corr_heatmap', 'figure'),
-         Output('app-container', 'style')],
-        [Input('mode-slider', 'value'),
-         Input('theme-slider', 'value'),
-         Input('attribute-dropdown', 'value')]
+theilu_fig = create_heatmap(0)
+
+# Create the sunburst chart
+def create_sunburst(color_blind):
+    if color_blind:
+        color_discrete_map = {'edible': '#1f77b4', 'poisonous': '#ff7f0e'}
+    else:
+        color_discrete_map = {'edible': 'seagreen', 'poisonous': 'red'}
+
+    fi = px.sunburst(
+        df_gill_color,
+        path=["odor", "spore-print-color", "gill-color", "class"],
+        color="class",
+        color_discrete_map=color_discrete_map,
+        height=800,
     )
-    def update_graphs(mode_value, theme_value, attribute_value):
+    fi.update_traces(textinfo='label+percent entry')
+    fi.update_layout(margin=dict(t=0, l=0, r=0, b=0))
+    return fi
 
-        pie = update_pie_chart(df, attribute_value)
-        bar = update_bar_plot(df, attribute_value, 0)
-        sun = create_sunburst(0)
-        big_corr = create_big_heatmap(color_blind=0)
-        small_corr = create_heatmap(color_blind=0)
+fig3 = create_sunburst(color_blind=False)
 
-        # Modify the hues used in the graphs for color-blind mode
-        if mode_value == 1:
-            bar = update_bar_plot(df, attribute_value, 1)
-            pie.update_traces(marker=dict(colors=color_blind_list))
-            # small_corr.update_traces(marker=dict(colors=color_blind_list))
-            sun = create_sunburst(1)
-            big_corr = create_big_heatmap(color_blind=1)
-            small_corr = create_heatmap(color_blind=1)
-        # Reset the hues to default for regular mode
-        else:
-            # bar.update_traces(marker=dict(color=['rgba(31, 119, 180, 0.5)', 'rgba(255, 127, 14, 0.5)']))
-            pie.update_traces(marker=dict(colors=['rgba(31, 119, 180, 0.5)', 'rgba(255, 127, 14, 0.5)']))
+def create_big_heatmap(color_blind):
 
-        # Apply light theme with white background
-        if theme_value == 0:
-            bar.update_layout(template="plotly", paper_bgcolor='#ffffff', plot_bgcolor='#ffffff')
-            pie.update_layout(template="plotly", paper_bgcolor='#ffffff', plot_bgcolor='#ffffff')
-            small_corr.update_layout(template="plotly", paper_bgcolor='#ffffff', plot_bgcolor='#ffffff')
-            sun.update_layout(template="plotly", paper_bgcolor='#ffffff', plot_bgcolor='#ffffff')
-            big_corr.update_layout(template="plotly", paper_bgcolor='#ffffff', plot_bgcolor='#ffffff')
+    # Calculate the chi-square test p-values for variable association
+    def cramers_v(confusion_matrix):
+        chi2 = ss.chi2_contingency(confusion_matrix)[0]
+        n = confusion_matrix.sum().sum()
+        phi2 = chi2 / n
+        r, k = confusion_matrix.shape
+        phi2corr = max(0, phi2 - ((k - 1) * (r - 1)) / (n - 1))
+        rcorr = r - ((r - 1) ** 2) / (n - 1)
+        kcorr = k - ((k - 1) ** 2) / (n - 1)
+        return np.sqrt(phi2corr / min((kcorr - 1), (rcorr - 1)))
 
-            return bar, pie, small_corr, sun, big_corr, {'backgroundColor': '#ffffff', 'color': '#002642'}
+    corr_matrix = pd.DataFrame(index=df.columns, columns=df.columns)
+    for col1 in df.columns:
+        for col2 in df.columns:
+            confusion_matrix = pd.crosstab(df[col1], df[col2])
+            corr_matrix.loc[col1, col2] = cramers_v(confusion_matrix)
 
-        # Apply dark theme with black background
-        else:
-            bar.update_layout(template="plotly_dark", paper_bgcolor='#002642', plot_bgcolor='#002642')
-            pie.update_layout(template="plotly_dark", paper_bgcolor='#002642', plot_bgcolor='#002642')
-            small_corr.update_layout(template="plotly_dark", paper_bgcolor='#002642', plot_bgcolor='#002642')
-            sun.update_layout(template="plotly_dark", paper_bgcolor='#002642', plot_bgcolor='#002642')
-            big_corr.update_layout(template="plotly_dark", paper_bgcolor='#002642', plot_bgcolor='#002642')
+    # Set diagonal elements to 1
+    np.fill_diagonal(corr_matrix.values, 1)
+    # Plot the heatmap
+    if color_blind:
+        scale = 'Cividis'
+    else:
+        scale = 'Viridis'
+    c_fig = px.imshow(corr_matrix.astype(float),
+                         x=corr_matrix.columns,
+                         y=corr_matrix.index,
+                         color_continuous_scale=scale,
+                         title="Cramér's V Statistic Heatmap",
+                         height=600,
+                         width=600)
+    return c_fig
 
-            pie.update_traces(textfont_color='#FFFFFF')
-            sun.update_traces(textfont_color='#FFFFFF')
-            big_corr.update_traces(textfont_color='#FFFFFF')
-            small_corr.update_traces(textfont_color='#FFFFFF')
+corr_fig = create_big_heatmap(color_blind=0)
+encoded_image = base64.b64encode(open("img.png", 'rb').read())
 
-            return bar, pie, small_corr, sun, big_corr, {'backgroundColor': '#002642', 'color': '#E5DADA'}
+app.layout = html.Div(
+    id="app-container",
+    className="container",
+    style={'backgroundColor': '#ffffff'},  # Set initial background color
+    children=[
 
-    @app.callback(
-        Output('saved', 'children'),
-        Input('save', 'n_clicks')
-    )
-    def save_result(n_clicks):
-        if n_clicks == 0:
-            return 'Not saved'
-        else:
-            make_static(f'http://127.0.0.1:{port}/')
-            return 'Saved'
+        html.Div(className="six columns", children=[
+            html.Img(src='data:image/png;base64,{}'.format(encoded_image.decode()), className="logo"),
 
-    app.run_server()
+            html.H1("Mushroom Dashboard", className="dashboard-title"),
+            html.H2("Eran Aizikovich 316531201, Yuval Segal 313354763",
+                    className="dashboard-subtitle"),
+
+        ]),
+
+        html.Div(className="charts-container", children=[
+            html.Div(className="row", children=[
+                html.Div(className="chart-column", children=[
+                    html.Div(className="corr_heatmap", children=[
+                        dcc.Graph(
+                            id='theil-u-heatmap',
+                            figure=theilu_fig,
+                        ),
+                    ]),
+                ]),
+                html.Div(className="chart-column", children=[
+                    html.Div(className="corr_heatmap", children=[
+                        dcc.Graph(
+                            id='corr_heatmap',
+                            figure=corr_fig,
+                        ),
+                    ], style={'margin': 'auto'}),
+                ]),
+            ]),
+
+            html.Div(className="row", children=[
+
+                html.Div(className="chart-column", children=[
+                    dcc.Graph(id="bar-plot", figure=fig1)
+                ]),
+                html.Div(className="chart-column", children=[
+                    html.Div(className="pie-chat", children=[
+                        dcc.Graph(id="survivors-gender-pie", figure=fig)
+
+                    ]),
+                ]),
+            ]),
+            html.Div(className="row2", children=[
+                html.Div(className="attribute-dropdown", children=[
+                    html.Label("Select Attribute for Charts above", style={'font-family': "Arial Black"}),
+                    dcc.Dropdown(
+                        id='attribute-dropdown',
+                        options=[{'label': attr, 'value': attr} for attr in attributes[1:]],
+                        value=attributes[1],
+                        multi=False,
+                        optionHeight=40,  # Set the height of each option
+                        style={'height': 'auto', 'width': '100%', 'font-family': "Arial Black",
+                               'color': '#840032'},
+                    ),
+                ])
+            ]),
+
+            html.Div(className="row3", children=[
+                # add title
+                html.H3("Mushroom Edibility and Poisonous by most common physical attributes",
+                        style={'font-family': "Arial Black"}),
+                html.H4("Class By Odor (Ring 0), Spore-print-color (Ring 1) & Gill-color (Ring 2)", style={'font-family': "Arial Black"}),
+                html.Div(className="circle", children=[
+                    dcc.Graph(
+                        id='circle-plot',
+                        figure=fig3,
+                    ),
+                ]),
+            ]),
+
+        ]),
+        html.Div(className="row", children=[
+            html.Div(className="twelve columns", children=[
+                html.Div(className="configuration-box", children=[
+                    html.H2("Configuration Box"),
+                    html.Div(id="slider-container", className="slider-container", children=[
+                        dcc.Slider(
+                            id='mode-slider',
+                            min=0,
+                            max=1,
+                            step=1,
+                            marks={0: 'Regular', 1: 'Color-Blind'},
+                            value=0,
+                            className="slider",
+                        ),
+                        dcc.Slider(
+                            id='theme-slider',
+                            min=0,
+                            max=1,
+                            step=1,
+                            marks={0: 'Light', 1: 'Dark'},
+                            value=0,
+                            className="slider"
+                        ),
+                    ]),
+                    html.Div(className="button-container", children=[
+                        html.Button('Save Static', id='save', n_clicks=0, className="btn btn-primary"),
+                        html.Span('', id='saved', className="btn-text")
+                    ]),
+                ]),
+            ]),
+        ]),
+    ],
+)
+
+@app.callback(
+    [Output('bar-plot', 'figure'),
+     Output('survivors-gender-pie', 'figure'),
+     Output('theil-u-heatmap', 'figure'),
+     Output('circle-plot', 'figure'),
+     Output('corr_heatmap', 'figure'),
+     Output('app-container', 'style')],
+    [Input('mode-slider', 'value'),
+     Input('theme-slider', 'value'),
+     Input('attribute-dropdown', 'value')]
+)
+def update_graphs(mode_value, theme_value, attribute_value):
+
+    pie = update_pie_chart(df, attribute_value)
+    bar = update_bar_plot(df, attribute_value, 0)
+    sun = create_sunburst(0)
+    big_corr = create_big_heatmap(color_blind=0)
+    small_corr = create_heatmap(color_blind=0)
+
+    # Modify the hues used in the graphs for color-blind mode
+    if mode_value == 1:
+        bar = update_bar_plot(df, attribute_value, 1)
+        pie.update_traces(marker=dict(colors=color_blind_list))
+        # small_corr.update_traces(marker=dict(colors=color_blind_list))
+        sun = create_sunburst(1)
+        big_corr = create_big_heatmap(color_blind=1)
+        small_corr = create_heatmap(color_blind=1)
+    # Reset the hues to default for regular mode
+    else:
+        pie.update_traces(marker=dict(colors=['rgba(31, 119, 180, 0.5)', 'rgba(255, 127, 14, 0.5)']))
+
+    # Apply light theme with white background
+    if theme_value == 0:
+        bar.update_layout(template="plotly", paper_bgcolor='#ffffff', plot_bgcolor='#ffffff')
+        pie.update_layout(template="plotly", paper_bgcolor='#ffffff', plot_bgcolor='#ffffff')
+        small_corr.update_layout(template="plotly", paper_bgcolor='#ffffff', plot_bgcolor='#ffffff')
+        sun.update_layout(template="plotly", paper_bgcolor='#ffffff', plot_bgcolor='#ffffff')
+        big_corr.update_layout(template="plotly", paper_bgcolor='#ffffff', plot_bgcolor='#ffffff')
+
+        return bar, pie, small_corr, sun, big_corr, {'backgroundColor': '#ffffff', 'color': '#002642'}
+
+    # Apply dark theme with black background
+    else:
+        bar.update_layout(template="plotly_dark", paper_bgcolor='#002642', plot_bgcolor='#002642')
+        pie.update_layout(template="plotly_dark", paper_bgcolor='#002642', plot_bgcolor='#002642')
+        small_corr.update_layout(template="plotly_dark", paper_bgcolor='#002642', plot_bgcolor='#002642')
+        sun.update_layout(template="plotly_dark", paper_bgcolor='#002642', plot_bgcolor='#002642')
+        big_corr.update_layout(template="plotly_dark", paper_bgcolor='#002642', plot_bgcolor='#002642')
+
+        pie.update_traces(textfont_color='#FFFFFF')
+        sun.update_traces(textfont_color='#FFFFFF')
+        big_corr.update_traces(textfont_color='#FFFFFF')
+        small_corr.update_traces(textfont_color='#FFFFFF')
+
+        return bar, pie, small_corr, sun, big_corr, {'backgroundColor': '#002642', 'color': '#E5DADA'}
+
+@app.callback(
+    Output('saved', 'children'),
+    Input('save', 'n_clicks')
+)
+def save_result(n_clicks):
+    if n_clicks == 0:
+        return 'Not saved'
+    else:
+        make_static(f'http://127.0.0.1:{port}/')
+        return 'Saved'
+
 
 
 if __name__ == '__main__':
-
-    main()
+    app.run_server()
